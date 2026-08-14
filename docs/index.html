@@ -28,7 +28,7 @@
   .preset-btn.active{background:var(--steel);color:#fff;font-weight:600;}
   .date-range{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);}
   .status-line{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin:14px 0 8px;min-height:16px;}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 26px;}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0 26px;}
   .kpi{background:#fff;border:1.5px solid var(--steel);border-radius:4px;padding:14px 16px;position:relative;overflow:hidden;}
   .kpi::before{content:'';position:absolute;top:0;left:0;bottom:0;width:5px;background:var(--safety);}
   .kpi.bad::before{background:var(--bad);} .kpi.ok::before{background:var(--ok);}
@@ -56,6 +56,7 @@
   .history-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-align:center;margin-top:3px;}
   .banner{background:var(--warn-bg);border:1.5px solid var(--warn);border-radius:4px;padding:10px 16px;margin-bottom:20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8a5a10;}
   @media(max-width:720px){ .kpis{grid-template-columns:repeat(2,1fr);} table{font-size:11.5px;} }
+  @media(max-width:920px) and (min-width:721px){ .kpis{grid-template-columns:repeat(3,1fr);} }
 </style>
 </head>
 <body>
@@ -177,9 +178,10 @@ function renderReasonTable(rows){
 }
 
 function renderHistory(rows){
+  const decided = rows.filter(r=>r.status !== "pending");
   const byDay = new Map();
-  rows.forEach(r=>{
-    const day = dayStr(r.closedAt);
+  decided.forEach(r=>{
+    const day = dayStr(r.issueDate);
     if(!byDay.has(day)) byDay.set(day, {approved:0, denied:0});
     const d = byDay.get(day);
     if(r.status === "approved") d.approved++; else d.denied++;
@@ -204,7 +206,7 @@ function renderHistory(rows){
 
 function applyRange(startDate, endDate){
   const rows = ALL_ROWS.filter(r=>{
-    const d = dayStr(r.closedAt);
+    const d = dayStr(r.issueDate);
     return d >= startDate && d <= endDate;
   });
   renderRows(rows, startDate, endDate);
@@ -212,7 +214,7 @@ function applyRange(startDate, endDate){
 
 function renderRows(rows, startDate, endDate){
   document.getElementById("subHeader").textContent =
-    `${startDate} to ${endDate} · JobTread proposal approvals & denials`;
+    `${startDate} to ${endDate} · JobTread proposals submitted, approved & denied`;
 
   if(!rows.length){
     document.getElementById("results").style.display = "none";
@@ -223,24 +225,26 @@ function renderRows(rows, startDate, endDate){
   document.getElementById("emptyState").style.display = "none";
   document.getElementById("results").style.display = "block";
 
+  const decided = rows.filter(r=>r.status !== "pending");
   const approved = rows.filter(r=>r.status==="approved");
   const denied = rows.filter(r=>r.status==="denied");
   const approvedAmt = approved.reduce((s,r)=>s+r.price,0);
   const deniedAmt = denied.reduce((s,r)=>s+r.price,0);
-  const denialRate = denied.length/rows.length;
+  const denialRate = decided.length ? denied.length/decided.length : 0;
 
   document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><div class="kpi-label">Submitted</div><div class="kpi-value">${rows.length}</div><div class="kpi-sub">proposals sent for review</div></div>
     <div class="kpi ok"><div class="kpi-label">Approved</div><div class="kpi-value">${approved.length}</div><div class="kpi-sub">${fmtMoney(approvedAmt)}</div></div>
     <div class="kpi bad"><div class="kpi-label">Denied</div><div class="kpi-value">${denied.length}</div><div class="kpi-sub">${fmtMoney(deniedAmt)}</div></div>
-    <div class="kpi"><div class="kpi-label">Denial Rate</div><div class="kpi-value">${Math.round(denialRate*100)}%</div><div class="kpi-sub">of ${rows.length} closed</div></div>
+    <div class="kpi"><div class="kpi-label">Denial Rate</div><div class="kpi-value">${Math.round(denialRate*100)}%</div><div class="kpi-sub">of ${decided.length} decided</div></div>
     <div class="kpi"><div class="kpi-label">$ At Risk</div><div class="kpi-value">${fmtMoney(deniedAmt)}</div><div class="kpi-sub">denied, resubmit candidates</div></div>
   `;
 
-  document.getElementById("jobTypeTableWrap").innerHTML = renderGroupTable(aggregate(rows, r=>r.jobType), "Job Type");
-  document.getElementById("programTableWrap").innerHTML = renderGroupTable(aggregate(rows, r=>r.program), "Program");
-  document.getElementById("reasonTableWrap").innerHTML = renderReasonTable(rows);
+  document.getElementById("jobTypeTableWrap").innerHTML = renderGroupTable(aggregate(decided, r=>r.jobType), "Job Type");
+  document.getElementById("programTableWrap").innerHTML = renderGroupTable(aggregate(decided, r=>r.program), "Program");
+  document.getElementById("reasonTableWrap").innerHTML = renderReasonTable(decided);
 
-  document.getElementById("statusLine").textContent = `${rows.length} records shown, ${startDate} to ${endDate}.`;
+  document.getElementById("statusLine").textContent = `${rows.length} submitted, ${decided.length} decided, ${startDate} to ${endDate}.`;
 }
 
 function setActivePreset(name){
@@ -251,7 +255,7 @@ function setActivePreset(name){
 
 function applyPreset(name){
   if(!ALL_ROWS.length) return;
-  const days = Array.from(new Set(ALL_ROWS.map(r=>dayStr(r.closedAt)))).sort();
+  const days = Array.from(new Set(ALL_ROWS.map(r=>dayStr(r.issueDate)))).sort();
   const latest = days[days.length-1];
   const earliest = days[0];
   let start, end;

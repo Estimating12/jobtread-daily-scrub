@@ -52,7 +52,10 @@ def jt_query(query_body, grant_key):
         raise SystemExit(f"JobTread API error {e.code}: {e.read().decode('utf-8', 'ignore')}")
 
 
-def fetch_documents(start_iso, end_iso):
+def fetch_documents(start_date, end_date):
+    """start_date/end_date are 'YYYY-MM-DD' strings, filtering on issueDate
+    (the submission date) rather than closedAt, so pending proposals that
+    haven't been decided yet are included too."""
     all_nodes = []
     page = None
     while True:
@@ -60,9 +63,9 @@ def fetch_documents(start_iso, end_iso):
             "where": {
                 "and": [
                     ["type", "customerOrder"],
-                    ["status", "in", ["approved", "denied"]],
-                    ["closedAt", ">=", start_iso],
-                    ["closedAt", "<", end_iso],
+                    ["status", "in", ["pending", "approved", "denied"]],
+                    ["issueDate", ">=", start_date],
+                    ["issueDate", "<", end_date],
                 ]
             },
             "size": 100,
@@ -81,6 +84,7 @@ def fetch_documents(start_iso, end_iso):
                         "fullName": {},
                         "status": {},
                         "price": {},
+                        "issueDate": {},
                         "closedAt": {},
                         "closeMessage": {},
                         "job": {
@@ -125,7 +129,8 @@ def normalize(nodes):
             "jobName": n["job"]["name"],
             "status": n["status"],
             "price": n["price"],
-            "closedAt": n["closedAt"],
+            "issueDate": n.get("issueDate"),
+            "closedAt": n.get("closedAt"),
             "jobType": job_type,
             "program": program,
             "reason": n.get("closeMessage") or "",
@@ -141,15 +146,15 @@ def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     end = now.replace(hour=0, minute=0, second=0, microsecond=0)
     start = end - datetime.timedelta(days=ROLLING_WINDOW_DAYS)
-    start_iso, end_iso = start.isoformat(), end.isoformat()
+    start_date, end_date = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
-    nodes = fetch_documents(start_iso, end_iso)
+    nodes = fetch_documents(start_date, end_date)
     rows = normalize(nodes)
 
     payload = {
         "generatedAt": now.isoformat(),
-        "windowStart": start_iso,
-        "windowEnd": end_iso,
+        "windowStart": start_date,
+        "windowEnd": end_date,
         "rows": rows,
     }
 
@@ -157,9 +162,12 @@ def main():
     with open(DATA_PATH, "w") as f:
         json.dump(payload, f, indent=2)
 
+    approved = [r for r in rows if r["status"] == "approved"]
     denied = [r for r in rows if r["status"] == "denied"]
-    print(f"Wrote {len(rows)} records ({len(denied)} denied) covering "
-          f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')} to {DATA_PATH}")
+    pending = [r for r in rows if r["status"] == "pending"]
+    print(f"Wrote {len(rows)} records (submitted) — {len(approved)} approved, "
+          f"{len(denied)} denied, {len(pending)} pending — covering "
+          f"{start_date} to {end_date} to {DATA_PATH}")
 
 
 if __name__ == "__main__":

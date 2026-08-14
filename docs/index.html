@@ -49,15 +49,6 @@
   .badge{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700;white-space:nowrap;}
   .badge.risk{background:var(--bad-bg);color:var(--bad);} .badge.watch{background:var(--warn-bg);color:var(--warn);} .badge.solid{background:var(--ok-bg);color:var(--ok);}
   .empty{background:#fff;border:1.5px dashed var(--line);border-radius:4px;padding:30px;text-align:center;color:var(--muted);font-size:13.5px;}
-  .denials-list{display:flex;flex-direction:column;gap:8px;}
-  .denial-card{background:#fff;border:1.5px solid var(--line);border-left:4px solid var(--bad);border-radius:3px;padding:10px 14px;}
-  .denial-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
-  .denial-main{font-size:13.5px;} .denial-main b{font-weight:600;}
-  .denial-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
-  .denial-price{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--bad);}
-  .denial-reason{font-size:12.5px;color:var(--steel);margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);}
-  .denial-reason .label{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--muted);margin-right:6px;}
-  .denial-reason.missing{color:var(--muted);font-style:italic;}
   footer{margin-top:34px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;}
   .history{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:10px;}
   .history-bar{flex:1;background:var(--steel-2);border-radius:2px 2px 0 0;position:relative;min-height:2px;}
@@ -98,8 +89,8 @@
     <h2>By Payer Program</h2>
     <div id="programTableWrap"></div>
 
-    <h2>Denials Needing Follow-Up <span class="hint" id="denialCount"></span></h2>
-    <div class="denials-list" id="denialsList"></div>
+    <h2>Denials by Reason <span class="hint">from JobTread's close message</span></h2>
+    <div id="reasonTableWrap"></div>
   </div>
 
   <div id="emptyState" class="empty" style="display:none;">No closed approvals or denials in this range.</div>
@@ -159,23 +150,30 @@ function renderGroupTable(groups, labelHeader){
   return `<table><thead><tr><th>${labelHeader}</th><th class="num">Total</th><th class="num">Approved</th><th class="num">Denied</th><th class="num">Denied $</th><th>Denial Rate</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function renderDenials(rows){
-  const denials = rows.filter(r=>r.status==="denied").sort((a,b)=> b.price - a.price);
-  document.getElementById("denialCount").textContent = `(${denials.length})`;
-  if(!denials.length) return '<div class="empty">No denials in this window.</div>';
-  return denials.map(d=>{
-    const hasReason = d.reason && d.reason.trim().length > 0;
-    const reasonHtml = hasReason
-      ? `<div class="denial-reason"><span class="label">Reason</span>${d.reason}</div>`
-      : `<div class="denial-reason missing"><span class="label">Reason</span>Not logged in JobTread</div>`;
-    return `<div class="denial-card">
-      <div class="denial-top">
-        <div class="denial-main"><b>${d.jobName}</b> — ${d.jobType} <span class="denial-meta">· ${d.program} · ${d.fullName}</span></div>
-        <div class="denial-price">${fmtMoney(d.price)}</div>
-      </div>
-      ${reasonHtml}
-    </div>`;
+function renderReasonTable(rows){
+  const denials = rows.filter(r=>r.status==="denied");
+  const total = denials.length;
+  const map = new Map();
+  denials.forEach(d=>{
+    const key = (d.reason && d.reason.trim().length) ? d.reason.trim() : "Not logged in JobTread";
+    if(!map.has(key)) map.set(key, {reason:key, count:0, amount:0});
+    const g = map.get(key);
+    g.count++;
+    g.amount += d.price;
+  });
+  const groups = Array.from(map.values()).sort((a,b)=> b.count - a.count || b.amount - a.amount);
+  if(!groups.length) return '<div class="empty">No denials in this window.</div>';
+  const rowsHtml = groups.map(g=>{
+    const pct = total ? Math.round((g.count/total)*100) : 0;
+    const missing = g.reason === "Not logged in JobTread";
+    return `<tr>
+      <td${missing ? ' style="font-style:italic;color:var(--muted);"' : ''}>${g.reason}</td>
+      <td class="num">${g.count}</td>
+      <td class="num">${pct}%</td>
+      <td class="num">${fmtMoney(g.amount)}</td>
+    </tr>`;
   }).join("");
+  return `<table><thead><tr><th>Reason</th><th class="num">Count</th><th class="num">% of Denials</th><th class="num">Total $</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
 }
 
 function renderHistory(rows){
@@ -240,7 +238,7 @@ function renderRows(rows, startDate, endDate){
 
   document.getElementById("jobTypeTableWrap").innerHTML = renderGroupTable(aggregate(rows, r=>r.jobType), "Job Type");
   document.getElementById("programTableWrap").innerHTML = renderGroupTable(aggregate(rows, r=>r.program), "Program");
-  document.getElementById("denialsList").innerHTML = renderDenials(rows);
+  document.getElementById("reasonTableWrap").innerHTML = renderReasonTable(rows);
 
   document.getElementById("statusLine").textContent = `${rows.length} records shown, ${startDate} to ${endDate}.`;
 }

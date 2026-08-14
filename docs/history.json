@@ -1,0 +1,51 @@
+[
+  {
+    "date": "2026-08-07",
+    "total": 5,
+    "approved": 4,
+    "denied": 1,
+    "denialRate": 0.2
+  },
+  {
+    "date": "2026-08-08",
+    "total": 4,
+    "approved": 3,
+    "denied": 1,
+    "denialRate": 0.25
+  },
+  {
+    "date": "2026-08-09",
+    "total": 3,
+    "approved": 3,
+    "denied": 0,
+    "denialRate": 0.0
+  },
+  {
+    "date": "2026-08-10",
+    "total": 4,
+    "approved": 3,
+    "denied": 1,
+    "denialRate": 0.25
+  },
+  {
+    "date": "2026-08-11",
+    "total": 6,
+    "approved": 4,
+    "denied": 2,
+    "denialRate": 0.33
+  },
+  {
+    "date": "2026-08-12",
+    "total": 3,
+    "approved": 2,
+    "denied": 1,
+    "denialRate": 0.33
+  },
+  {
+    "date": "2026-08-13",
+    "total": 9,
+    "approved": 5,
+    "denied": 4,
+    "denialRate": 0.44
+  }
+]

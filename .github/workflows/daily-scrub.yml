@@ -1,11 +1,13 @@
 name: Daily JobTread Scrub
 
 on:
-  schedule:
-    # Runs at 12:00 UTC = 8:00 AM ET (EDT) / 7:00 AM ET (EST).
-    # Adjust the hour if you want a different local time.
-    - cron: "0 12 * * *"
-  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab too
+  # PAUSED: the daily schedule is commented out while this repo is public,
+  # so real client/job data can't get pushed to a public page. Once the
+  # repo is private (paid GitHub plan) or you've moved hosting elsewhere,
+  # uncomment the two lines below to resume the automatic daily run.
+  # schedule:
+  #   - cron: "0 12 * * *"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
 
 permissions:
   contents: write

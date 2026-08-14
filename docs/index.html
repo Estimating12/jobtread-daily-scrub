@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Scrub — SAMPLE DATA — Demo Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EFE8; --steel:#1E2630; --steel-2:#2B3542; --navy:#16233B;
+    --safety:#E85D04; --ok:#2F7A4D; --ok-bg:#E4F1E8; --bad:#B3261E; --bad-bg:#FBE6E4;
+    --warn:#B7791F; --warn-bg:#FBF0DD; --line:#D8D2C4; --muted:#6B6459;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--steel);font-family:'Inter',sans-serif;padding:28px 20px 60px;}
+  .wrap{max-width:1100px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;border-bottom:3px solid var(--steel);padding-bottom:16px;margin-bottom:22px;}
+  .brand-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--safety);font-weight:700;margin-bottom:4px;}
+  h1{font-family:'Oswald',sans-serif;font-size:30px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin:0;}
+  .sub{color:var(--muted);font-size:13.5px;margin-top:4px;}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 26px;}
+  .kpi{background:#fff;border:1.5px solid var(--steel);border-radius:4px;padding:14px 16px;position:relative;overflow:hidden;}
+  .kpi::before{content:'';position:absolute;top:0;left:0;bottom:0;width:5px;background:var(--safety);}
+  .kpi.bad::before{background:var(--bad);} .kpi.ok::before{background:var(--ok);}
+  .kpi-label{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .kpi-value{font-family:'Oswald',sans-serif;font-size:28px;font-weight:700;margin-top:4px;}
+  .kpi-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  h2{font-family:'Oswald',sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--steel);padding-bottom:6px;margin:32px 0 12px;display:flex;justify-content:space-between;align-items:baseline;}
+  h2 span.hint{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);text-transform:none;letter-spacing:0;}
+  table{width:100%;border-collapse:collapse;background:#fff;}
+  th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--steel);white-space:nowrap;}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;}
+  tr:hover td{background:#FAF8F3;}
+  .num{font-family:'JetBrains Mono',monospace;text-align:right;}
+  .gauge-row{display:flex;align-items:center;gap:8px;}
+  .gauge{flex:1;height:8px;background:var(--ok-bg);border-radius:4px;overflow:hidden;min-width:70px;}
+  .gauge-fill{height:100%;background:var(--bad);}
+  .pct{font-family:'JetBrains Mono',monospace;font-size:12px;width:42px;text-align:right;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700;}
+  .badge.risk{background:var(--bad-bg);color:var(--bad);} .badge.watch{background:var(--warn-bg);color:var(--warn);} .badge.solid{background:var(--ok-bg);color:var(--ok);}
+  .empty{background:#fff;border:1.5px dashed var(--line);border-radius:4px;padding:30px;text-align:center;color:var(--muted);font-size:13.5px;}
+  .denials-list{display:flex;flex-direction:column;gap:8px;}
+  .denial-card{background:#fff;border:1.5px solid var(--line);border-left:4px solid var(--bad);border-radius:3px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .denial-main{font-size:13.5px;} .denial-main b{font-weight:600;}
+  .denial-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .denial-price{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--bad);}
+  footer{margin-top:34px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;}
+  .history{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:10px;}
+  .history-bar{flex:1;background:var(--steel-2);border-radius:2px 2px 0 0;position:relative;min-height:2px;}
+  .history-bar.hi{background:var(--bad);}
+  .history-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-align:center;margin-top:3px;}
+  @media(max-width:720px){ .kpis{grid-template-columns:repeat(2,1fr);} table{font-size:11.5px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand-eyebrow">Phoenix Pro · Price Point Management</div>
+      <h1>Daily Scrub</h1>
+      <div class="sub">SAMPLE DATA — Demo Report · generated demo build, not a live pull · JobTread proposal approvals &amp; denials</div>
+    </div>
+  </header>
+
+  <div style="background:#FBF0DD;border:1.5px solid #B7791F;border-radius:4px;padding:10px 16px;margin-bottom:20px;font-family:JetBrains Mono,monospace;font-size:12px;color:#8a5a10;">SAMPLE DATA — figures reflect real activity patterns and price points; job identifiers are placeholders. Daily auto-refresh is currently paused.</div><div class="kpis">
+    <div class="kpi ok"><div class="kpi-label">Approved</div><div class="kpi-value">11</div><div class="kpi-sub">$54,809</div></div>
+    <div class="kpi bad"><div class="kpi-label">Denied</div><div class="kpi-value">9</div><div class="kpi-sub">$192,028</div></div>
+    <div class="kpi"><div class="kpi-label">Denial Rate</div><div class="kpi-value">45%</div><div class="kpi-sub">of 20 closed</div></div>
+    <div class="kpi"><div class="kpi-label">$ At Risk</div><div class="kpi-value">$192,028</div><div class="kpi-sub">denied, resubmit candidates</div></div>
+  </div>
+
+  <h2>By Job Type (Price Point) <span class="hint">sorted by denial rate</span></h2>
+  <table>
+        <thead><tr><th>Job Type</th><th class="num">Total</th><th class="num">Approved</th><th class="num">Denied</th><th class="num">Denied $</th><th>Denial Rate</th><th>Status</th></tr></thead>
+        <tbody><tr>
+            <td>SHIP / Miscellaneous</td>
+            <td class="num">2</td>
+            <td class="num">0</td>
+            <td class="num">2</td>
+            <td class="num">$153,857</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:100%"></div></div><div class="pct">100%</div></div></td>
+            <td><span class="badge risk">At risk</span></td>
+        </tr><tr>
+            <td>Tub Conversion / Toilet</td>
+            <td class="num">1</td>
+            <td class="num">0</td>
+            <td class="num">1</td>
+            <td class="num">$15,100</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:100%"></div></div><div class="pct">100%</div></div></td>
+            <td><span class="badge watch">N/A</span></td>
+        </tr><tr>
+            <td>Enhanced Chore Services</td>
+            <td class="num">2</td>
+            <td class="num">1</td>
+            <td class="num">1</td>
+            <td class="num">$1,300</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:50%"></div></div><div class="pct">50%</div></div></td>
+            <td><span class="badge risk">At risk</span></td>
+        </tr><tr>
+            <td>Ramp</td>
+            <td class="num">9</td>
+            <td class="num">5</td>
+            <td class="num">4</td>
+            <td class="num">$21,196</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:44%"></div></div><div class="pct">44%</div></div></td>
+            <td><span class="badge risk">At risk</span></td>
+        </tr><tr>
+            <td>Grab Bars</td>
+            <td class="num">3</td>
+            <td class="num">2</td>
+            <td class="num">1</td>
+            <td class="num">$575</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:33%"></div></div><div class="pct">33%</div></div></td>
+            <td><span class="badge watch">Watch</span></td>
+        </tr><tr>
+            <td>Enhanced Chore Services / Appliances</td>
+            <td class="num">2</td>
+            <td class="num">2</td>
+            <td class="num">0</td>
+            <td class="num">$0</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:0%"></div></div><div class="pct">0%</div></div></td>
+            <td><span class="badge solid">Solid</span></td>
+        </tr><tr>
+            <td>PC-Termite</td>
+            <td class="num">1</td>
+            <td class="num">1</td>
+            <td class="num">0</td>
+            <td class="num">$0</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:0%"></div></div><div class="pct">0%</div></div></td>
+            <td><span class="badge watch">N/A</span></td>
+        </tr></tbody>
+    </table>
+
+  <h2>By Payer Program</h2>
+  <table>
+        <thead><tr><th>Program</th><th class="num">Total</th><th class="num">Approved</th><th class="num">Denied</th><th class="num">Denied $</th><th>Denial Rate</th><th>Status</th></tr></thead>
+        <tbody><tr>
+            <td>City of Deerfield Beach</td>
+            <td class="num">2</td>
+            <td class="num">0</td>
+            <td class="num">2</td>
+            <td class="num">$153,857</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:100%"></div></div><div class="pct">100%</div></div></td>
+            <td><span class="badge risk">At risk</span></td>
+        </tr><tr>
+            <td>Brain and Spinal Cord Injury Program</td>
+            <td class="num">1</td>
+            <td class="num">0</td>
+            <td class="num">1</td>
+            <td class="num">$15,100</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:100%"></div></div><div class="pct">100%</div></div></td>
+            <td><span class="badge watch">N/A</span></td>
+        </tr><tr>
+            <td>Florida Community Care</td>
+            <td class="num">3</td>
+            <td class="num">1</td>
+            <td class="num">2</td>
+            <td class="num">$3,038</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:67%"></div></div><div class="pct">67%</div></div></td>
+            <td><span class="badge risk">At risk</span></td>
+        </tr><tr>
+            <td>United Healthcare</td>
+            <td class="num">4</td>
+            <td class="num">2</td>
+            <td class="num">2</td>
+            <td class="num">$1,052</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:50%"></div></div><div class="pct">50%</div></div></td>
+            <td><span class="badge risk">At risk</span></td>
+        </tr><tr>
+            <td>Simply</td>
+            <td class="num">7</td>
+            <td class="num">5</td>
+            <td class="num">2</td>
+            <td class="num">$18,982</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:29%"></div></div><div class="pct">29%</div></div></td>
+            <td><span class="badge watch">Watch</span></td>
+        </tr><tr>
+            <td>DCF</td>
+            <td class="num">2</td>
+            <td class="num">2</td>
+            <td class="num">0</td>
+            <td class="num">$0</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:0%"></div></div><div class="pct">0%</div></div></td>
+            <td><span class="badge solid">Solid</span></td>
+        </tr><tr>
+            <td>Sunshine Health</td>
+            <td class="num">1</td>
+            <td class="num">1</td>
+            <td class="num">0</td>
+            <td class="num">$0</td>
+            <td><div class="gauge-row"><div class="gauge"><div class="gauge-fill" style="width:0%"></div></div><div class="pct">0%</div></div></td>
+            <td><span class="badge watch">N/A</span></td>
+        </tr></tbody>
+    </table>
+
+  <h2>Denials Needing Follow-Up <span class="hint">(9)</span></h2>
+  <div class="denials-list"><div class="denial-card">
+            <div class="denial-main"><b>Sample Job S</b> — SHIP / Miscellaneous <span class="denial-meta">· City of Deerfield Beach · Sample Proposal S19</span></div>
+            <div class="denial-price">$101,850</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job R</b> — SHIP / Miscellaneous <span class="denial-meta">· City of Deerfield Beach · Sample Proposal R18</span></div>
+            <div class="denial-price">$52,007</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job H</b> — Ramp <span class="denial-meta">· Simply · Sample Proposal H8</span></div>
+            <div class="denial-price">$18,407</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job B</b> — Tub Conversion / Toilet <span class="denial-meta">· Brain and Spinal Cord Injury Program · Sample Proposal B2</span></div>
+            <div class="denial-price">$15,100</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job T</b> — Ramp <span class="denial-meta">· Florida Community Care · Sample Proposal T20</span></div>
+            <div class="denial-price">$1,738</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job P</b> — Enhanced Chore Services <span class="denial-meta">· Florida Community Care · Sample Proposal P16</span></div>
+            <div class="denial-price">$1,300</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job E</b> — Ramp <span class="denial-meta">· United Healthcare · Sample Proposal E5</span></div>
+            <div class="denial-price">$700</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job C</b> — Grab Bars <span class="denial-meta">· Simply · Sample Proposal C3</span></div>
+            <div class="denial-price">$575</div>
+        </div><div class="denial-card">
+            <div class="denial-main"><b>Sample Job N</b> — Ramp <span class="denial-meta">· United Healthcare · Sample Proposal N14</span></div>
+            <div class="denial-price">$352</div>
+        </div></div>
+
+  <h2 style="margin-top:40px;">Trend — Denial Rate by Day</h2>
+  <div style="display:flex;gap:6px;align-items:flex-end;background:#fff;border:1.5px solid var(--steel);border-radius:4px;padding:14px;"><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar " style="height:12px;width:100%;" title="08-07: 20% denied"></div></div>
+            <div class="history-label">08-07</div>
+        </div><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar " style="height:15px;width:100%;" title="08-08: 25% denied"></div></div>
+            <div class="history-label">08-08</div>
+        </div><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar " style="height:4px;width:100%;" title="08-09: 0% denied"></div></div>
+            <div class="history-label">08-09</div>
+        </div><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar " style="height:15px;width:100%;" title="08-10: 25% denied"></div></div>
+            <div class="history-label">08-10</div>
+        </div><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar hi" style="height:20px;width:100%;" title="08-11: 33% denied"></div></div>
+            <div class="history-label">08-11</div>
+        </div><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar hi" style="height:20px;width:100%;" title="08-12: 33% denied"></div></div>
+            <div class="history-label">08-12</div>
+        </div><div style="flex:1;text-align:center;">
+            <div class="history" style="height:60px;"><div class="history-bar hi" style="height:26px;width:100%;" title="08-13: 44% denied"></div></div>
+            <div class="history-label">08-13</div>
+        </div></div>
+
+  <footer>Auto-generated daily from JobTread. This page is overwritten each morning — bookmark it, don't screenshot it.</footer>
+</div>
+</body>
+</html>

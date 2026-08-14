@@ -1,0 +1,36 @@
+name: Daily JobTread Scrub
+
+on:
+  schedule:
+    # Runs at 12:00 UTC = 8:00 AM ET (EDT) / 7:00 AM ET (EST).
+    # Adjust the hour if you want a different local time.
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab too
+
+permissions:
+  contents: write
+
+jobs:
+  scrub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate report
+        env:
+          JOBTREAD_GRANT_KEY: ${{ secrets.JOBTREAD_GRANT_KEY }}
+        run: python3 scripts/generate_scrub.py
+
+      - name: Commit and push updated report
+        run: |
+          git config user.name "daily-scrub-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/index.html docs/history.json
+          git diff --quiet --cached || git commit -m "Daily scrub: $(date -u +'%Y-%m-%d')"
+          git push
